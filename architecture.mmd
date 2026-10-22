@@ -1,0 +1,28 @@
+flowchart TD
+  U[User] --> UI[Gradio UI]
+  UI --> W[Request and controlled planning workflow]
+  W --> LP[Load user preferences from SQLite]
+  LP --> VP[Generate and validate request-specific plan]
+  VP --> PS[Update plan state: pending / running / completed / failed]
+  PS --> AG[LangChain agent and shared tools]
+  AG --> T1[Mock flight search]
+  AG --> T2[Mock hotel search]
+  AG --> T3[Mock attractions]
+  AG --> T4[Mock restaurants]
+  AG --> T5[Mock weather]
+  T1 & T2 & T3 & T4 & T5 --> TR[Record tool results]
+  TR --> FI[Personalized itinerary]
+  FI --> UI
+  subgraph MEMORY[Memory architecture]
+    CS[Thread message history in SQLite]
+    CP[LangGraph checkpointer concept: thread-scoped state]
+    LS[User-specific long-term preference table]
+    EP[Optional episodic records of past plans]
+    PR[Procedural workflow rules]
+    CP -. durable SQLite checkpoint adapter is optional extension .-> CS
+  end
+  W -. guided by .-> PR
+  LP <--> LS
+  AG --> EP
+  NB[Agent Notebook] --> W
+  UI -. shares implementation .-> W
