@@ -2,6 +2,7 @@ from app.planner import create_plan,update_step
 from app.agent import TravelAgent
 from app.config import Settings
 from app.memory_store import MemoryStore
+from types import SimpleNamespace
 
 def test_plan_statuses_and_execution_records(tmp_path):
     plan=create_plan('Plan a weekend itinerary in Florence')
@@ -39,3 +40,19 @@ def test_tool_failure_is_recorded_and_plan_step_fails(tmp_path):
     assert failure['status']=='failed' and failure['error']=='sample outage'
     assert failure['started_at'] and failure['completed_at']
     assert step.status=='failed' and step.error=='sample outage'
+
+def test_agent_persists_structured_gemini_answer_content(tmp_path):
+    settings=Settings(None,'gemini-3.8-flash',tmp_path/'structured-answer.sqlite',False)
+    store=MemoryStore(settings.database_path)
+    agent=TravelAgent(store,settings)
+    expected=[{'type':'text','text':'Your saved Italian preference is ready.'}]
+
+    class StructuredAnswerModel:
+        def invoke(self,messages):
+            return {'messages':[SimpleNamespace(content=expected)]}
+
+    # Avoid a network call while reproducing Gemini's structured content shape.
+    agent.llm_agent=StructuredAnswerModel()
+    result=agent.respond('traveler','thread-structured','What preference did I save?')
+    assert result['answer']==expected
+    assert store.get_messages('traveler','thread-structured')[-1]['content']==expected
