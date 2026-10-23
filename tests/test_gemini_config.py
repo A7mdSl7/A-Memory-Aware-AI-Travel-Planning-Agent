@@ -1,6 +1,6 @@
 from app.agent import create_gemini_model
 from app.config import Settings, get_settings
-from langchain_google_genai import ChatGoogleGenerativeAI
+import pytest
 
 def test_settings_reads_gemini_environment(monkeypatch, tmp_path):
     monkeypatch.setenv("GEMINI_API_KEY", "unit-test-key")
@@ -14,6 +14,9 @@ def test_settings_reads_gemini_environment(monkeypatch, tmp_path):
     assert settings.demo_mode is False
 
 def test_gemini_chat_model_initializes_without_network_request():
+    ChatGoogleGenerativeAI = pytest.importorskip(
+        "langchain_google_genai", reason="Install requirements-gemini.txt for Gemini support"
+    ).ChatGoogleGenerativeAI
     settings = Settings("unit-test-key", "gemini-3.8-flash", None, False)
     model = create_gemini_model(settings)
     assert isinstance(model, ChatGoogleGenerativeAI)

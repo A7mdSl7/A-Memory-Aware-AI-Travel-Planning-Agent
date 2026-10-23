@@ -1,0 +1,3 @@
+# Optional provider integration for credentialed Gemini mode.
+-r requirements.txt
+langchain-google-genai>=4.4,<5.0

@@ -2,17 +2,24 @@ import json, uuid, inspect
 import gradio as gr
 from .config import get_settings
 from .memory_store import MemoryStore
-from .agent import TravelAgent
+from .agent import GeminiConfigurationError, TravelAgent
 from .planner import create_plan
 
 settings=get_settings(); store=MemoryStore(settings.database_path)
-if not settings.demo_mode and not settings.gemini_api_key:
-    CONFIG_ERROR='Gemini mode is selected but GEMINI_API_KEY is missing. Add it to the project .env or set DEMO_MODE=true.'
-else: CONFIG_ERROR=''
-agent=TravelAgent(store,settings,force_demo=True if CONFIG_ERROR else None)
+
+def initialize_agent(memory_store, app_settings):
+    """Initialize the requested provider, with a visible Demo fallback on config errors."""
+    try:
+        return TravelAgent(memory_store, app_settings), ''
+    except GeminiConfigurationError as exc:
+        warning=f'{exc} Falling back to deterministic Demo Mode.'
+        return TravelAgent(memory_store, app_settings, force_demo=True), warning
+
+agent,CONFIG_ERROR=initialize_agent(store,settings)
 
 def status_text():
-    return f"Provider: {'Gemini configured' if settings.gemini_api_key else 'Gemini not configured'} | Mode: {'DEMO — deterministic mock behavior' if agent.demo else 'Gemini agent'}" + (f"\n⚠ {CONFIG_ERROR}" if CONFIG_ERROR else '')
+    mode='DEMO fallback — deterministic mock behavior' if CONFIG_ERROR else ('DEMO — deterministic mock behavior' if agent.demo else 'Gemini agent')
+    return f"Provider: {'Gemini configured' if settings.gemini_api_key else 'Gemini not configured'} | Mode: {mode}" + (f"\n⚠ {CONFIG_ERROR}" if CONFIG_ERROR else '')
 def memories(user):
     if not user.strip(): return '{}'
     return json.dumps(store.get_preferences(user).model_dump(),ensure_ascii=False,indent=2)
@@ -37,8 +44,14 @@ def respond(user,thread,message,history):
 with gr.Blocks(title='MemoryLab | Travel Planner') as demo:
     gr.Markdown('# MemoryLab ✈️\nA memory-aware travel planning agent')
     status=gr.Markdown(status_text())
+    # Stable identifiers/secret let this non-sensitive profile label survive app restarts.
+    user_id_state=gr.BrowserState(
+        default_value='demo-user',
+        storage_key='memorylab-user-id',
+        secret='memorylab-local-user-id-v1',
+    )
     with gr.Row():
-        user=gr.Textbox(label='Demo user ID',value='demo-user')
+        user=gr.Textbox(label='Demo user ID',value='demo-user',info='This ID is remembered in this browser across app restarts. Use the same ID to retrieve saved preferences; different IDs have separate memories.')
         thread=gr.Textbox(label='Conversation thread',value=str(uuid.uuid4())[:8],interactive=False)
         fresh=gr.Button('New conversation')
     with gr.Row():
@@ -64,5 +77,7 @@ with gr.Blocks(title='MemoryLab | Travel Planner') as demo:
         if not user_id.strip(): return 'Enter a user ID first.'
         store.clear_user(user_id.strip()); return f'Cleared local data for `{user_id}`.'
     clear.click(clear_user,inputs=user,outputs=clear_result).then(memories,inputs=user,outputs=memory)
+    demo.load(lambda saved_user: saved_user or 'demo-user',inputs=user_id_state,outputs=user)
+    user.change(lambda current_user: current_user,inputs=user,outputs=user_id_state)
 
 if __name__=='__main__': demo.launch()

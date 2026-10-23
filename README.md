@@ -14,13 +14,29 @@ Legacy LangChain memory classes such as `ConversationBufferMemory` were prompt-o
 
 ## Requirements and setup (Windows PowerShell)
 
-Python 3.10 or newer is required. From this directory:
+Use 64-bit CPython 3.12 on Windows (Python 3.10+ is supported by the selected
+packages, but 3.12 is the project's validated recommendation). From this directory:
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
-Copy-Item .env.example .env
+python -m pip install -r requirements-dev.txt
+if (-not (Test-Path .env)) { Copy-Item .env.example .env }
+```
+
+`requirements.txt` installs only the application runtime. The development file
+also installs pytest and Jupyter for the tests and notebooks. To enable the
+optional Gemini provider, install its adapter separately:
+
+```powershell
+python -m pip install -r requirements-gemini.txt
+```
+
+For the exact dependency set validated on Windows x64 with CPython 3.12, install
+the generated lock file instead of the development ranges:
+
+```powershell
+python -m pip install -r requirements-dev.lock
 ```
 
 Edit `.env` and add a Gemini API key from [Google AI Studio](https://aistudio.google.com/apikey) only if you want LLM mode. Keep `DEMO_MODE=true` for offline demo. To enable the Gemini agent set `DEMO_MODE=false`, set `GEMINI_API_KEY`, and optionally change `GEMINI_MODEL` (default: `gemini-3.8-flash`). The application reports a useful configuration error if LLM mode is selected without a key. Never commit `.env` or print the key.
@@ -35,7 +51,7 @@ python -m app.ui
 
 To restart after changing `.env` or installing packages, stop the running server with `Ctrl+C`, then run the same `python -m app.ui` command again.
 
-Open both notebooks:
+Open both notebooks (Jupyter is installed by `requirements-dev.txt`):
 
 ```powershell
 jupyter notebook notebooks/01_memory_comparison.ipynb notebooks/02_memory_aware_agent.ipynb
