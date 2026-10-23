@@ -3,6 +3,13 @@ from .models import Preferences
 from .planner import create_plan, update_step
 from .tools import TRAVEL_TOOLS
 
+def create_gemini_model(settings):
+    """Create the configured Gemini chat model without logging credentials."""
+    if not settings.gemini_api_key:
+        raise ValueError("GEMINI_API_KEY is not configured. Add it to .env or enable DEMO_MODE.")
+    from langchain_google_genai import ChatGoogleGenerativeAI
+    return ChatGoogleGenerativeAI(model=settings.gemini_model, api_key=settings.gemini_api_key)
+
 def extract_explicit_preferences(text: str, current: Preferences) -> Preferences:
     """Conservative extraction: only explicit positive statements update saved values."""
     d=current.model_dump()
@@ -22,10 +29,9 @@ class TravelAgent:
         self.demo = settings.demo_mode if force_demo is None else force_demo
         self.tools={t.name:t for t in TRAVEL_TOOLS}
         self.llm_agent=None
-        if not self.demo and settings.api_key:
+        if not self.demo and settings.gemini_api_key:
             from langchain.agents import create_agent
-            from langchain_openai import ChatOpenAI
-            self.llm_agent=create_agent(ChatOpenAI(model=settings.model,api_key=settings.api_key),TRAVEL_TOOLS,system_prompt="You are a careful travel planner. Use supplied preference and tool results; state that travel tool data is illustrative mock data. Never invent a budget or claim mock results are live.")
+            self.llm_agent=create_agent(create_gemini_model(settings),TRAVEL_TOOLS,system_prompt="You are a careful travel planner. Use supplied preference and tool results; state that travel tool data is illustrative mock data. Never invent a budget or claim mock results are live. The application has already executed and recorded the planned tools; do not call them again unless new information is required.")
     def respond(self,user_id,thread_id,message):
         prefs=extract_explicit_preferences(message,self.store.get_preferences(user_id))
         self.store.save_preferences(user_id,prefs)

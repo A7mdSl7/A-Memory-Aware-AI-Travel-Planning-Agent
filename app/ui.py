@@ -6,13 +6,13 @@ from .agent import TravelAgent
 from .planner import create_plan
 
 settings=get_settings(); store=MemoryStore(settings.database_path)
-if not settings.demo_mode and not settings.api_key:
-    CONFIG_ERROR='LLM mode is selected but OPENAI_API_KEY is missing. Add it to the project .env or set DEMO_MODE=true.'
+if not settings.demo_mode and not settings.gemini_api_key:
+    CONFIG_ERROR='Gemini mode is selected but GEMINI_API_KEY is missing. Add it to the project .env or set DEMO_MODE=true.'
 else: CONFIG_ERROR=''
 agent=TravelAgent(store,settings,force_demo=True if CONFIG_ERROR else None)
 
 def status_text():
-    return f"Provider: {'configured' if settings.api_key else 'not configured'} | Mode: {'DEMO — deterministic mock behavior' if agent.demo else 'LLM agent'}" + (f"\n⚠ {CONFIG_ERROR}" if CONFIG_ERROR else '')
+    return f"Provider: {'Gemini configured' if settings.gemini_api_key else 'Gemini not configured'} | Mode: {'DEMO — deterministic mock behavior' if agent.demo else 'Gemini agent'}" + (f"\n⚠ {CONFIG_ERROR}" if CONFIG_ERROR else '')
 def memories(user):
     if not user.strip(): return '{}'
     return json.dumps(store.get_preferences(user).model_dump(),ensure_ascii=False,indent=2)

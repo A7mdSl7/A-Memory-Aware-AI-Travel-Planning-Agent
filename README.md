@@ -1,13 +1,13 @@
 # MemoryLab — Memory-Aware Travel Planning Agent
 
-An educational project separating thread conversation history from durable, user-scoped preferences. The Gradio interface and implementation notebook share the modules in `app/`. Travel results are deterministic illustrative mock data; they are not live prices, availability, or forecasts. With an OpenAI key and `DEMO_MODE=false`, LangChain's current `create_agent` API performs LLM reasoning and tool selection over these mock tools.
+An educational project separating thread conversation history from durable, user-scoped preferences. The Gradio interface and implementation notebook share the modules in `app/`. Travel results are deterministic illustrative mock data; they are not live prices, availability, or forecasts. With a Gemini API key and `DEMO_MODE=false`, LangChain's current `create_agent` API uses Gemini for agent reasoning alongside these mock tools.
 
 ## Features and architecture
 
 - SQLite stores validated preferences, thread messages, and compact trip episodes.
 - A controlled workflow creates a request-specific plan before tool execution and records each tool's arguments, status, and result.
 - Five shared LangChain tools cover flights, hotels, attractions, restaurants, and weather.
-- Demo mode runs without credentials. LLM mode uses `langchain-openai` and never displays the key.
+- Demo mode runs without credentials. LLM mode uses `langchain-google-genai` and never displays the key.
 - See [`architecture.mmd`](architecture.mmd) for the data flow.
 
 Legacy LangChain memory classes such as `ConversationBufferMemory` were prompt-oriented abstractions from earlier releases. Modern LangGraph separates thread-scoped state/checkpointing from long-term stores. A checkpoint is not a cross-user preference store; this project's durable SQLite preference table serves that application-specific purpose. The education notebook discusses migration and context management.
@@ -23,7 +23,7 @@ python -m pip install -r requirements.txt
 Copy-Item .env.example .env
 ```
 
-Edit `.env` and add an API key from [OpenAI API keys](https://platform.openai.com/api-keys) only if you want LLM mode. Keep `DEMO_MODE=true` for offline demo. To enable the actual LLM agent set `DEMO_MODE=false`, set `OPENAI_API_KEY`, and optionally change `OPENAI_MODEL`. The application reports a useful configuration error if LLM mode is selected without a key. Never commit `.env`.
+Edit `.env` and add a Gemini API key from [Google AI Studio](https://aistudio.google.com/apikey) only if you want LLM mode. Keep `DEMO_MODE=true` for offline demo. To enable the Gemini agent set `DEMO_MODE=false`, set `GEMINI_API_KEY`, and optionally change `GEMINI_MODEL` (default: `gemini-3.8-flash`). The application reports a useful configuration error if LLM mode is selected without a key. Never commit `.env` or print the key.
 
 ## Run
 
@@ -32,6 +32,8 @@ Launch Gradio from the project root:
 ```powershell
 python -m app.ui
 ```
+
+To restart after changing `.env` or installing packages, stop the running server with `Ctrl+C`, then run the same `python -m app.ui` command again.
 
 Open both notebooks:
 
@@ -43,6 +45,14 @@ Run API-free tests:
 
 ```powershell
 python -m pytest -q
+```
+
+To test Gemini connectivity and an actual tool call (makes a real API request and may incur usage), set `RUN_GEMINI_CONNECTIVITY=1` in the current PowerShell session and run:
+
+```powershell
+$env:RUN_GEMINI_CONNECTIVITY = "1"
+python -m pytest -q tests/test_gemini_connectivity.py
+Remove-Item Env:RUN_GEMINI_CONNECTIVITY
 ```
 
 ## Demonstrate persistent memory
@@ -63,5 +73,7 @@ In the agent notebook, save explicit preferences for `demo-user`, close and reop
 - [LangChain agents](https://docs.langchain.com/oss/python/langchain/agents)
 - [LangGraph persistence](https://docs.langchain.com/oss/python/langgraph/persistence)
 - [LangGraph memory](https://docs.langchain.com/oss/python/langgraph/add-memory)
-- [LangChain OpenAI integration](https://docs.langchain.com/oss/python/integrations/chat/openai)
+- [LangChain Google GenAI reference](https://reference.langchain.com/python/langchain-google-genai)
+- [Gemini models and capabilities](https://ai.google.dev/gemini-api/docs/models)
+- [Gemini function calling](https://ai.google.dev/gemini-api/docs/function-calling)
 - [Gradio](https://www.gradio.app/docs)

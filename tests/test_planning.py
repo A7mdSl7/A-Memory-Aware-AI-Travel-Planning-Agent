@@ -10,6 +10,7 @@ def test_plan_statuses_and_execution_records(tmp_path):
     assert plan.steps[0].status=='completed'
     settings=Settings(None,'gpt-4.1-mini',tmp_path/'db.sqlite',True)
     agent=TravelAgent(MemoryStore(settings.database_path),settings)
+    assert agent.demo is True and agent.llm_agent is None
     out=agent.respond('demo','thread-2','Plan a weekend itinerary in Florence')
     assert out['demo'] and len(out['tool_logs'])>=4
     assert all(x['status']=='completed' and x['result'] for x in out['tool_logs'])
