@@ -83,9 +83,3 @@ In the agent notebook, save explicit preferences for `demo-user`, close and reop
 - Preference extraction is deliberately conservative and English-language demo logic. Ambiguous information is not silently promoted to a fact; richer multilingual extraction and explicit correction UX are future improvements.
 - Mock destination parsing is intentionally simple. Real flight/hotel integrations, live weather, date validation, and production auth are outside scope.
 - SQLite is suitable for a local classroom demonstration, not multi-host concurrent production deployment.
-- [LangGraph persistence](https://docs.langchain.com/oss/python/langgraph/persistence)
-- [LangGraph memory](https://docs.langchain.com/oss/python/langgraph/add-memory)
-- [LangChain Google GenAI reference](https://reference.langchain.com/python/langchain-google-genai)
-- [Gemini models and capabilities](https://ai.google.dev/gemini-api/docs/models)
-- [Gemini function calling](https://ai.google.dev/gemini-api/docs/function-calling)
-- [Gradio](https://www.gradio.app/docs)
