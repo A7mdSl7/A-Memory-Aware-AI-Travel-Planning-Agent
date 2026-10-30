@@ -1,6 +1,6 @@
 # Reproducible Windows x64 / CPython 3.12 development environment.
 # Generated from a fresh validation virtual environment after resolving requirements-dev.txt.
-# Includes exact installed versions; excludes the optional Gemini provider.
+# Includes exact installed versions for deterministic Demo Mode.
 annotated-doc==0.0.5
 annotated-types==0.8.0
 anyio==4.15.1

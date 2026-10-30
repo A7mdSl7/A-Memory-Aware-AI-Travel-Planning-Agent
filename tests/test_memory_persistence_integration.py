@@ -12,8 +12,6 @@ def test_preferences_survive_sqlite_reopen_and_drive_new_florence_itinerary(tmp_
     database = tmp_path / "persistent-memory.sqlite"
     user_id = "integration-traveler"
     settings = Settings(
-        gemini_api_key=None,
-        gemini_model="gemini-3.8-flash",
         database_path=database,
         demo_mode=True,
     )
