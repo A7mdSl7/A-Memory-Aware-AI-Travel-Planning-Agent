@@ -32,7 +32,7 @@ def memories(user: str) -> str:
 
 
 def render_memory_view(user: str) -> str:
-    """Format user preferences into organized, modern dashboard cards."""
+    """Format user preferences into organized, modern dashboard cards with high-contrast text."""
     u = user.strip() or "demo-user"
     prefs = store.get_preferences(u)
     p = prefs.model_dump()
@@ -52,7 +52,7 @@ def render_memory_view(user: str) -> str:
     if prefs.cuisine_preferences:
         cuisines_html = "".join(f'<span class="pill-tag">🍝 {c}</span>' for c in prefs.cuisine_preferences)
     else:
-        cuisines_html = '<span style="color:#94a3b8;font-size:0.85rem;">No cuisine preferences saved yet</span>'
+        cuisines_html = '<span style="color:#64748b;font-size:0.85rem;font-weight:500;">No cuisine preferences saved yet</span>'
 
     # Schedule
     if prefs.avoid_early_mornings is True:
@@ -82,13 +82,13 @@ def render_memory_view(user: str) -> str:
 <div class="panel-card">
   <div class="panel-header">
     <div class="panel-title">👤 Profile: <span style="color:#4f46e5;font-weight:700;">{u}</span></div>
-    <span style="font-size:0.75rem;color:#64748b;font-weight:500;">💾 {episodes_count} saved episodes in SQLite</span>
+    <span style="font-size:0.75rem;color:#475569;font-weight:600;">💾 {episodes_count} saved episodes in SQLite</span>
   </div>
   <div class="pref-grid">
     <div class="pref-box">
       <div class="pref-label">🏛️ Interests</div>
-      <div style="margin-bottom:4px;">{interests_badge}</div>
-      <div style="font-size:0.78rem;color:#64748b;">{interests_desc}</div>
+      <div style="margin-bottom:6px;">{interests_badge}</div>
+      <div style="font-size:0.8rem;color:#334155;line-height:1.4;">{interests_desc}</div>
     </div>
     <div class="pref-box">
       <div class="pref-label">🍽️ Preferred Cuisines</div>
@@ -96,19 +96,19 @@ def render_memory_view(user: str) -> str:
     </div>
     <div class="pref-box">
       <div class="pref-label">⏰ Schedule Preference</div>
-      <div style="margin-bottom:4px;">{schedule_badge}</div>
-      <div style="font-size:0.78rem;color:#64748b;">{schedule_desc}</div>
+      <div style="margin-bottom:6px;">{schedule_badge}</div>
+      <div style="font-size:0.8rem;color:#334155;line-height:1.4;">{schedule_desc}</div>
     </div>
     <div class="pref-box">
       <div class="pref-label">💶 Budget Range</div>
-      <div style="margin-bottom:4px;">{budget_badge}</div>
-      <div style="font-size:0.78rem;color:#64748b;">{budget_desc}</div>
+      <div style="margin-bottom:6px;">{budget_badge}</div>
+      <div style="font-size:0.8rem;color:#334155;line-height:1.4;">{budget_desc}</div>
     </div>
   </div>
-  <div style="margin-top:12px;">
-    <details style="font-size:0.78rem;color:#64748b;cursor:pointer;">
-      <summary style="font-weight:600;padding:4px 0;">🔍 Technical Details (Raw SQLite Preference Payload)</summary>
-      <pre style="background:#0f172a;color:#f8fafc;padding:10px;border-radius:6px;margin-top:6px;overflow-x:auto;font-family:monospace;"><code>{raw_json}</code></pre>
+  <div style="margin-top:14px;">
+    <details style="font-size:0.8rem;cursor:pointer;">
+      <summary style="font-weight:600;padding:6px 0;color:#334155;">🔍 Technical Details (Raw SQLite Preference Payload)</summary>
+      <pre style="background:#0f172a;color:#f8fafc;padding:10px;border-radius:6px;margin-top:6px;overflow-x:auto;font-family:monospace;border:1px solid #334155;"><code>{raw_json}</code></pre>
     </details>
   </div>
 </div>
@@ -119,10 +119,10 @@ def render_plan_view(plan) -> str:
     """Format travel planning workflow with progress percentage and status icons."""
     if not plan or not plan.steps:
         return """
-<div class="panel-card" style="text-align:center;padding:24px 16px;color:#64748b;">
+<div class="panel-card" style="text-align:center;padding:24px 16px;">
   <div style="font-size:1.8rem;margin-bottom:8px;">📋</div>
-  <div style="font-weight:600;color:#1e293b;">No Request Planned Yet</div>
-  <div style="font-size:0.82rem;margin-top:4px;">Send a travel request or click an example prompt to generate a plan.</div>
+  <div style="font-weight:700;color:#0f172a;font-size:1rem;">No Request Planned Yet</div>
+  <div style="font-size:0.85rem;margin-top:4px;color:#475569;">Send a travel request or click an example prompt to generate a plan.</div>
 </div>
 """
     total = len(plan.steps)
@@ -145,18 +145,18 @@ def render_plan_view(plan) -> str:
                 res_obj = json.loads(s.result)
                 if isinstance(res_obj, dict) and "options" in res_obj:
                     count = len(res_obj["options"])
-                    detail_preview = f'<div style="font-size:0.74rem;color:#64748b;margin-top:2px;">Found {count} option(s)</div>'
+                    detail_preview = f'<div style="font-size:0.75rem;color:#475569;margin-top:2px;">Found {count} option(s)</div>'
             except Exception:
                 pass
         elif s.status == "failed" and s.error:
-            detail_preview = f'<div style="font-size:0.74rem;color:#ef4444;margin-top:2px;">Error: {s.error}</div>'
+            detail_preview = f'<div style="font-size:0.75rem;color:#dc2626;margin-top:2px;font-weight:600;">Error: {s.error}</div>'
 
         step_items.append(f"""
 <div class="step-item">
   <div class="step-info">
-    <span style="font-size:1rem;font-weight:700;">{icon}</span>
+    <span style="font-size:1rem;font-weight:700;color:#0f172a;">{icon}</span>
     <div>
-      <div>{s.title}</div>
+      <div style="color:#0f172a;font-weight:600;">{s.title}</div>
       {detail_preview}
     </div>
   </div>
@@ -173,7 +173,7 @@ def render_plan_view(plan) -> str:
       {'completed' if percent == 100 else 'in progress' if percent > 0 else 'pending'}
     </span>
   </div>
-  <div style="background:#e2e8f0;height:6px;border-radius:9999px;overflow:hidden;margin-bottom:12px;">
+  <div style="background:#e2e8f0;height:7px;border-radius:9999px;overflow:hidden;margin-bottom:12px;">
     <div style="background:#4f46e5;height:100%;width:{percent}%;transition:width 0.3s ease;"></div>
   </div>
   <div class="step-list">
@@ -187,10 +187,10 @@ def render_tools_view(logs: list) -> str:
     """Format tool activity logs with parameters, results, and expandable details."""
     if not logs:
         return """
-<div class="panel-card" style="text-align:center;padding:24px 16px;color:#64748b;">
+<div class="panel-card" style="text-align:center;padding:24px 16px;">
   <div style="font-size:1.8rem;margin-bottom:8px;">🛠️</div>
-  <div style="font-weight:600;color:#1e293b;">No Tool Activity Yet</div>
-  <div style="font-size:0.82rem;margin-top:4px;">Tool executions (flights, hotels, attractions, restaurants, weather) will appear here.</div>
+  <div style="font-weight:700;color:#0f172a;font-size:1rem;">No Tool Activity Yet</div>
+  <div style="font-size:0.85rem;margin-top:4px;color:#475569;">Tool executions (flights, hotels, attractions, restaurants, weather) will appear here.</div>
 </div>
 """
     tool_icons = {
@@ -238,7 +238,7 @@ def render_tools_view(logs: list) -> str:
             elif "forecast" in result:
                 result_summary = f"Forecast: {result.get('forecast')}"
         elif error:
-            result_summary = f'<span style="color:#ef4444;">Error: {error}</span>'
+            result_summary = f'<span style="color:#dc2626;font-weight:600;">Error: {error}</span>'
 
         raw_json = json.dumps(log, ensure_ascii=False, indent=2)
 
@@ -247,16 +247,16 @@ def render_tools_view(logs: list) -> str:
   <div class="tool-header">
     <div class="tool-name">
       <span style="font-size:1.1rem;">{icon}</span>
-      <span><code>{name}</code></span>
+      <code>{name}</code>
     </div>
     <span class="status-pill {status_class}">{status}</span>
   </div>
   <div class="tool-body">
-    <div style="margin-bottom:4px;"><b>Input Arguments:</b> <span style="color:#1e293b;">{args_formatted}</span></div>
-    {f'<div style="margin-bottom:4px;color:#0f172a;"><b>Result:</b> {result_summary}</div>' if result_summary else ''}
-    <details style="margin-top:6px;font-size:0.75rem;color:#64748b;cursor:pointer;">
-      <summary style="font-weight:500;">Inspect Tool Payload (JSON)</summary>
-      <pre style="background:#0f172a;color:#f8fafc;padding:8px;border-radius:6px;margin-top:4px;overflow-x:auto;font-family:monospace;"><code>{raw_json}</code></pre>
+    <div style="margin-bottom:6px;"><b style="color:#0f172a;">Input Arguments:</b> <span style="color:#334155;">{args_formatted}</span></div>
+    {f'<div style="margin-bottom:6px;"><b style="color:#0f172a;">Result:</b> <span style="color:#334155;">{result_summary}</span></div>' if result_summary else ''}
+    <details style="margin-top:8px;font-size:0.8rem;cursor:pointer;">
+      <summary style="font-weight:600;color:#334155;">Inspect Tool Payload (JSON)</summary>
+      <pre style="background:#0f172a;color:#f8fafc;padding:8px;border-radius:6px;margin-top:4px;overflow-x:auto;font-family:monospace;border:1px solid #334155;"><code>{raw_json}</code></pre>
     </details>
   </div>
 </div>
@@ -320,37 +320,73 @@ EXAMPLE_PROMPTS = [
 ]
 
 CUSTOM_CSS = """
-/* Modern AI SaaS Dashboard Styling */
+/* ==========================================================================
+   MemoryLab CSS System: Clean Dark Background with Crisp White Cards
+   High-Contrast Typography & Explicit Visibility for All Gradio Components
+   ========================================================================== */
+
 :root {
+  /* Dark Page Theme (Backgrounds & Page Text) */
+  --page-bg: #0b0f19;
+  --page-surface: #111827;
+  --page-border: #334155;
+  --page-text: #f8fafc;
+  --page-text-muted: #94a3b8;
+
+  /* White Card Theme (Panels & Surfaces) */
+  --card-bg: #ffffff;
+  --card-bg-subtle: #f8fafc;
+  --card-border: #e2e8f0;
+  --card-text: #0f172a;
+  --card-text-muted: #334155;
+  --card-text-subtle: #475569;
+
+  /* Accent Colors */
   --primary: #4f46e5;
   --primary-hover: #4338ca;
-  --bg-subtle: #f8fafc;
-  --card-bg: #ffffff;
-  --border-color: #e2e8f0;
-  --text-main: #0f172a;
-  --text-muted: #64748b;
-  --success: #10b981;
-  --warning: #f59e0b;
-  --danger: #ef4444;
+  --primary-light: #eef2ff;
+  --primary-text: #312e81;
+
+  --success-bg: #dcfce7;
+  --success-text: #14532d;
+  --success-border: #86efac;
+
+  --warning-bg: #fef3c7;
+  --warning-text: #78350f;
+  --warning-border: #fcd34d;
+
+  --danger-bg: #fee2e2;
+  --danger-text: #7f1d1d;
+  --danger-border: #fca5a5;
+}
+
+/* Base Page Styling */
+body, html {
+  background-color: var(--page-bg) !important;
+  color: var(--page-text) !important;
 }
 
 .gradio-container {
   max-width: 1400px !important;
   margin: 0 auto !important;
+  background-color: var(--page-bg) !important;
+  color: var(--page-text) !important;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
 }
 
-/* Header */
+/* ==========================================================================
+   Header Component (White Card)
+   ========================================================================== */
 .app-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 18px 24px;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  background: var(--card-bg) !important;
+  border: 1px solid var(--card-border) !important;
   border-radius: 14px;
   margin-bottom: 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
 .header-left {
@@ -360,22 +396,23 @@ CUSTOM_CSS = """
 }
 
 .header-logo {
-  font-size: 32px;
+  font-size: 34px;
   line-height: 1;
 }
 
 .header-titles h1 {
   margin: 0 !important;
-  font-size: 1.45rem !important;
+  font-size: 1.5rem !important;
   font-weight: 700 !important;
-  color: #0f172a !important;
+  color: var(--card-text) !important;
   letter-spacing: -0.02em;
 }
 
 .header-titles p {
   margin: 2px 0 0 0 !important;
-  font-size: 0.88rem !important;
-  color: #64748b !important;
+  font-size: 0.9rem !important;
+  color: var(--card-text-muted) !important;
+  font-weight: 500;
 }
 
 .header-badges {
@@ -388,176 +425,480 @@ CUSTOM_CSS = """
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 12px;
+  padding: 6px 14px;
   border-radius: 9999px;
-  font-size: 0.78rem;
-  font-weight: 600;
+  font-size: 0.8rem;
+  font-weight: 700;
   letter-spacing: 0.02em;
 }
 
 .badge-demo {
-  background: #eef2ff;
-  color: #4338ca;
-  border: 1px solid #c7d2fe;
+  background: var(--primary-light) !important;
+  color: var(--primary-text) !important;
+  border: 1px solid #c7d2fe !important;
 }
 
 .badge-memory {
-  background: #ecfdf5;
-  color: #065f46;
-  border: 1px solid #a7f3d0;
+  background: #ecfdf5 !important;
+  color: #065f46 !important;
+  border: 1px solid #a7f3d0 !important;
 }
 
 .pulse-dot {
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
   background-color: #10b981;
   border-radius: 50%;
-  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
 }
 
-/* Panel Card */
+/* ==========================================================================
+   White Card Containers (Planning, Memory, Tool Panels)
+   ========================================================================== */
 .panel-card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  background: var(--card-bg) !important;
+  border: 1px solid var(--card-border) !important;
   border-radius: 12px;
-  padding: 16px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
-  margin-bottom: 12px;
+  padding: 18px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  margin-bottom: 14px;
+  color: var(--card-text) !important;
+}
+
+/* Ensure no text inside panel-card inherits dark-mode white text */
+.panel-card,
+.panel-card p,
+.panel-card div,
+.panel-card span,
+.panel-card b,
+.panel-card strong,
+.gradio-container .panel-card * {
+  color: var(--card-text);
 }
 
 .panel-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--card-border);
 }
 
 .panel-title {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: #1e293b;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--card-text) !important;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
-/* Preference Cards */
+/* ==========================================================================
+   User Memory Panel Styling
+   ========================================================================== */
 .pref-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 12px;
 }
 
 .pref-box {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--card-bg-subtle) !important;
+  border: 1px solid var(--card-border) !important;
   border-radius: 8px;
-  padding: 10px 12px;
+  padding: 12px 14px;
 }
 
 .pref-label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--card-text-subtle) !important;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
-  margin-bottom: 4px;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
 }
 
 .pill-tag {
   display: inline-block;
-  background: #e0e7ff;
-  color: #3730a3;
-  padding: 2px 8px;
+  background: var(--primary-light) !important;
+  color: var(--primary-text) !important;
+  border: 1px solid #c7d2fe !important;
+  padding: 3px 9px;
   border-radius: 6px;
-  font-size: 0.78rem;
-  font-weight: 500;
+  font-size: 0.8rem;
+  font-weight: 600;
   margin-right: 4px;
   margin-bottom: 4px;
 }
 
-/* Workflow Step Item */
+/* ==========================================================================
+   Workflow Step Items
+   ========================================================================== */
 .step-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
+  padding: 10px 14px;
   border-radius: 8px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  margin-bottom: 6px;
+  background: var(--card-bg-subtle) !important;
+  border: 1px solid var(--card-border) !important;
+  margin-bottom: 8px;
 }
 
 .step-info {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 0.86rem;
-  font-weight: 500;
-  color: #1e293b;
+  gap: 10px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--card-text) !important;
 }
 
+/* Status Pills */
 .status-pill {
-  font-size: 0.72rem;
-  font-weight: 600;
-  padding: 2px 8px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 3px 10px;
   border-radius: 9999px;
   text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
-.status-pending { background: #f1f5f9; color: #64748b; }
-.status-running { background: #dbeafe; color: #1e40af; }
-.status-completed { background: #dcfce7; color: #166534; }
-.status-failed { background: #fee2e2; color: #991b1b; }
+.status-pending {
+  background: #f1f5f9 !important;
+  color: #334155 !important;
+  border: 1px solid #cbd5e1 !important;
+}
 
-/* Tool Cards */
+.status-running {
+  background: #dbeafe !important;
+  color: #1e40af !important;
+  border: 1px solid #93c5fd !important;
+}
+
+.status-completed {
+  background: var(--success-bg) !important;
+  color: var(--success-text) !important;
+  border: 1px solid var(--success-border) !important;
+}
+
+.status-failed {
+  background: var(--danger-bg) !important;
+  color: var(--danger-text) !important;
+  border: 1px solid var(--danger-border) !important;
+}
+
+/* ==========================================================================
+   Tool Cards
+   ========================================================================== */
 .tool-card {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--card-bg-subtle) !important;
+  border: 1px solid var(--card-border) !important;
   border-radius: 8px;
-  padding: 10px 14px;
-  margin-bottom: 8px;
+  padding: 12px 16px;
+  margin-bottom: 10px;
 }
 
 .tool-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .tool-name {
-  font-weight: 600;
-  font-size: 0.88rem;
-  color: #1e293b;
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: var(--card-text) !important;
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
-.tool-body {
-  font-size: 0.82rem;
-  color: #475569;
-  line-height: 1.4;
+.tool-name code {
+  background: #e2e8f0 !important;
+  color: var(--card-text) !important;
+  padding: 2px 6px;
+  border-radius: 4px;
 }
 
-.examples-label {
-  font-size: 0.78rem;
+.tool-body {
+  font-size: 0.84rem;
+  color: var(--card-text-muted) !important;
+  line-height: 1.5;
+}
+
+/* ==========================================================================
+   Expandable Technical Details inside Cards
+   ========================================================================== */
+.panel-card details summary {
+  color: var(--card-text-muted) !important;
   font-weight: 600;
-  color: #64748b;
-  margin: 6px 0 4px 0;
+  cursor: pointer;
+  user-select: none;
+}
+
+.panel-card details summary:hover {
+  color: var(--primary) !important;
+}
+
+.panel-card details pre,
+.panel-card details pre *,
+.panel-card details pre code {
+  background: #0f172a !important;
+  color: #f8fafc !important;
+  border: 1px solid #334155;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+}
+
+/* ==========================================================================
+   Gradio Form Inputs, Textboxes, and Labels on Dark Page Background
+   ========================================================================== */
+.gradio-container .block > label > span,
+.gradio-container label span,
+.gradio-container .block-label {
+  color: #f1f5f9 !important;
+  font-weight: 600 !important;
+  font-size: 0.86rem !important;
+}
+
+.gradio-container .block-info,
+.gradio-container span[data-testid="block-info"],
+.gradio-container label + span {
+  color: #94a3b8 !important;
+  font-size: 0.78rem !important;
+}
+
+.gradio-container input[type="text"],
+.gradio-container textarea {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border: 1px solid #334155 !important;
+  border-radius: 8px !important;
+  font-size: 0.9rem !important;
+}
+
+.gradio-container input[type="text"]:focus,
+.gradio-container textarea:focus {
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25) !important;
+  outline: none !important;
+}
+
+.gradio-container input[type="text"]::placeholder,
+.gradio-container textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+.gradio-container input[type="text"][readonly],
+.gradio-container input[type="text"]:disabled {
+  background-color: #0f172a !important;
+  color: #cbd5e1 !important;
+  border-color: #1e293b !important;
+  cursor: default !important;
+}
+
+/* ==========================================================================
+   Buttons (Primary, Secondary, Stop, Small)
+   ========================================================================== */
+/* Primary Button (Send) */
+.gradio-container button.primary {
+  background-color: var(--primary) !important;
+  color: #ffffff !important;
+  border: 1px solid var(--primary-hover) !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+  transition: all 0.2s ease !important;
+}
+.gradio-container button.primary:hover {
+  background-color: var(--primary-hover) !important;
+  color: #ffffff !important;
+}
+.gradio-container button.primary:active {
+  background-color: #3730a3 !important;
+}
+
+/* Secondary Buttons (New Conversation, Refresh, Example Prompts) */
+.gradio-container button.secondary,
+.gradio-container button:not(.primary):not(.stop) {
+  background-color: #1e293b !important;
+  color: #f1f5f9 !important;
+  border: 1px solid #334155 !important;
+  font-weight: 500 !important;
+  border-radius: 8px !important;
+  transition: all 0.2s ease !important;
+}
+.gradio-container button.secondary:hover,
+.gradio-container button:not(.primary):not(.stop):hover {
+  background-color: #334155 !important;
+  color: #ffffff !important;
+  border-color: #6366f1 !important;
+}
+.gradio-container button.secondary:active,
+.gradio-container button:not(.primary):not(.stop):active {
+  background-color: #0f172a !important;
+}
+
+/* Danger / Stop Button (Clear User Data) */
+.gradio-container button.stop {
+  background-color: #dc2626 !important;
+  color: #ffffff !important;
+  border: 1px solid #b91c1c !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+}
+.gradio-container button.stop:hover {
+  background-color: #b91c1c !important;
+  color: #ffffff !important;
+}
+
+/* ==========================================================================
+   Chatbot Styling
+   ========================================================================== */
+.gradio-container [data-testid="chatbot"],
+.gradio-container .chatbot {
+  background-color: #0f172a !important;
+  border: 1px solid #334155 !important;
+  border-radius: 12px !important;
+}
+
+/* Bot Messages */
+.gradio-container .bot,
+.gradio-container [data-testid="bot"],
+.gradio-container .message.bot {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border: 1px solid #334155 !important;
+  border-radius: 10px !important;
+}
+.gradio-container .bot *,
+.gradio-container [data-testid="bot"] *,
+.gradio-container .message.bot * {
+  color: #f8fafc !important;
+}
+.gradio-container .bot strong,
+.gradio-container [data-testid="bot"] strong,
+.gradio-container .message.bot strong {
+  color: #ffffff !important;
+}
+.gradio-container .bot h1,
+.gradio-container .bot h2,
+.gradio-container .bot h3,
+.gradio-container [data-testid="bot"] h3 {
+  color: #818cf8 !important;
+}
+.gradio-container .bot code,
+.gradio-container [data-testid="bot"] code {
+  background: #0f172a !important;
+  color: #a5b4fc !important;
+  padding: 2px 5px !important;
+  border-radius: 4px !important;
+}
+
+/* User Messages */
+.gradio-container .user,
+.gradio-container [data-testid="user"],
+.gradio-container .message.user {
+  background-color: #4338ca !important;
+  color: #ffffff !important;
+  border: 1px solid #4f46e5 !important;
+  border-radius: 10px !important;
+}
+.gradio-container .user *,
+.gradio-container [data-testid="user"] *,
+.gradio-container .message.user * {
+  color: #ffffff !important;
+}
+
+/* ==========================================================================
+   Tabs, Accordion, and Notice Styling
+   ========================================================================== */
+/* Tabs Navigation */
+.gradio-container .tab-nav {
+  border-bottom: 1px solid #334155 !important;
+}
+.gradio-container .tab-nav button {
+  color: #94a3b8 !important;
+  font-weight: 500 !important;
+  background: transparent !important;
+  border: none !important;
+  font-size: 0.9rem !important;
+  padding: 10px 16px !important;
+}
+.gradio-container .tab-nav button:hover {
+  color: #f1f5f9 !important;
+}
+.gradio-container .tab-nav button.selected,
+.gradio-container .tab-nav button[aria-selected="true"] {
+  color: #ffffff !important;
+  border-bottom: 2px solid #6366f1 !important;
+  font-weight: 700 !important;
+}
+
+/* Accordion */
+.gradio-container details.accordion {
+  background-color: #111827 !important;
+  border: 1px solid #334155 !important;
+  border-radius: 8px !important;
+  padding: 8px 12px !important;
+}
+.gradio-container details.accordion summary,
+.gradio-container details.accordion summary span {
+  color: #f1f5f9 !important;
+  font-weight: 600 !important;
+}
+
+/* Checkbox */
+.gradio-container input[type="checkbox"] {
+  accent-color: #4f46e5 !important;
+}
+.gradio-container label.checkbox,
+.gradio-container label.checkbox span {
+  color: #e2e8f0 !important;
+}
+
+/* Examples Label and Mock Notice */
+.examples-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #cbd5e1 !important;
+  margin: 10px 0 6px 0;
 }
 
 .mock-notice {
-  font-size: 0.76rem;
-  color: #64748b;
-  background: #f8fafc;
-  border: 1px dashed #cbd5e1;
-  border-radius: 6px;
-  padding: 8px 12px;
-  margin-top: 10px;
+  font-size: 0.78rem;
+  color: #cbd5e1 !important;
+  background: #111827 !important;
+  border: 1px dashed #334155 !important;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-top: 12px;
+  line-height: 1.5;
+}
+.mock-notice b {
+  color: #f8fafc !important;
+}
+
+/* ==========================================================================
+   Mobile Responsiveness
+   ========================================================================== */
+@media (max-width: 768px) {
+  .pref-grid {
+    grid-template-columns: 1fr;
+  }
+  .app-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+  }
+  .header-badges {
+    flex-wrap: wrap;
+  }
+  .gradio-container {
+    padding: 8px !important;
+  }
 }
 """
 
