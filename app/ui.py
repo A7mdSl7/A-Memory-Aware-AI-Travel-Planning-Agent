@@ -109,53 +109,53 @@ def render_memory_view(user: str) -> str:
     episodes_count = len(episodes)
     raw_json = json.dumps(p, ensure_ascii=False, indent=2)
 
-    return f"""
-<div class="panel-card">
-  <div class="panel-header">
-    <div class="panel-title">👤 Profile: <span style="color:#4f46e5;font-weight:700;">{u}</span></div>
-    <span style="font-size:0.75rem;color:#475569;font-weight:600;">💾 {episodes_count} saved episodes in SQLite</span>
-  </div>
-  <div class="pref-grid">
-    <div class="pref-box">
-      <div class="pref-label">🏛️ Interests</div>
-      <div style="margin-bottom:6px;">{interests_badge}</div>
-      <div style="font-size:0.8rem;color:#334155;line-height:1.4;">{interests_desc}</div>
-    </div>
-    <div class="pref-box">
-      <div class="pref-label">🍽️ Preferred Cuisines</div>
-      <div style="margin-top:2px;">{cuisines_html}</div>
-    </div>
-    <div class="pref-box">
-      <div class="pref-label">⏰ Schedule Preference</div>
-      <div style="margin-bottom:6px;">{schedule_badge}</div>
-      <div style="font-size:0.8rem;color:#334155;line-height:1.4;">{schedule_desc}</div>
-    </div>
-    <div class="pref-box">
-      <div class="pref-label">💶 Budget Range</div>
-      <div style="margin-bottom:6px;">{budget_badge}</div>
-      <div style="font-size:0.8rem;color:#334155;line-height:1.4;">{budget_desc}</div>
-    </div>
-  </div>
-  <div style="margin-top:14px;">
-    <details style="font-size:0.8rem;cursor:pointer;">
-      <summary style="font-weight:600;padding:6px 0;color:#334155;">🔍 Technical Details (Raw SQLite Preference Payload)</summary>
-      <pre style="background:#0f172a;color:#f8fafc;padding:10px;border-radius:6px;margin-top:6px;overflow-x:auto;font-family:monospace;border:1px solid #334155;"><code>{raw_json}</code></pre>
-    </details>
-  </div>
-</div>
-"""
+    return (
+        f'<div class="panel-card">'
+        f'<div class="panel-header">'
+        f'<div class="panel-title">👤 Profile: <span style="color:#4f46e5;font-weight:700;">{u}</span></div>'
+        f'<span style="font-size:0.75rem;color:#475569;font-weight:600;">💾 {episodes_count} saved episodes in SQLite</span>'
+        f'</div>'
+        f'<div class="pref-grid">'
+        f'<div class="pref-box">'
+        f'<div class="pref-label">🏛️ Interests</div>'
+        f'<div style="margin-bottom:6px;">{interests_badge}</div>'
+        f'<div style="font-size:0.8rem;color:#334155;line-height:1.4;">{interests_desc}</div>'
+        f'</div>'
+        f'<div class="pref-box">'
+        f'<div class="pref-label">🍽️ Preferred Cuisines</div>'
+        f'<div style="margin-top:2px;">{cuisines_html}</div>'
+        f'</div>'
+        f'<div class="pref-box">'
+        f'<div class="pref-label">⏰ Schedule Preference</div>'
+        f'<div style="margin-bottom:6px;">{schedule_badge}</div>'
+        f'<div style="font-size:0.8rem;color:#334155;line-height:1.4;">{schedule_desc}</div>'
+        f'</div>'
+        f'<div class="pref-box">'
+        f'<div class="pref-label">💶 Budget Range</div>'
+        f'<div style="margin-bottom:6px;">{budget_badge}</div>'
+        f'<div style="font-size:0.8rem;color:#334155;line-height:1.4;">{budget_desc}</div>'
+        f'</div>'
+        f'</div>'
+        f'<div style="margin-top:14px;">'
+        f'<details style="font-size:0.8rem;cursor:pointer;">'
+        f'<summary style="font-weight:600;padding:6px 0;color:#334155;">🔍 Technical Details (Raw SQLite Preference Payload)</summary>'
+        f'<pre style="background:#0f172a;color:#f8fafc;padding:10px;border-radius:6px;margin-top:6px;overflow-x:auto;font-family:monospace;border:1px solid #334155;"><code>{raw_json}</code></pre>'
+        f'</details>'
+        f'</div>'
+        f'</div>'
+    )
 
 
 def render_plan_view(plan) -> str:
     """Format travel planning workflow as a clean vertical timeline with progress and status indicators."""
     if not plan or not plan.steps:
-        return """
-<div class="panel-card plan-panel-card" style="text-align:center;padding:28px 16px;">
-  <div style="font-size:2rem;margin-bottom:8px;">📋</div>
-  <div style="font-weight:700;color:#0f172a;font-size:1rem;">No Request Planned Yet</div>
-  <div style="font-size:0.85rem;margin-top:4px;color:#475569;">Send a travel request or click an example prompt to generate a plan.</div>
-</div>
-"""
+        return (
+            '<div class="panel-card plan-panel-card" style="text-align:center;padding:28px 16px;">'
+            '<div style="font-size:2rem;margin-bottom:8px;">📋</div>'
+            '<div style="font-weight:700;color:#0f172a;font-size:1rem;">No Request Planned Yet</div>'
+            '<div style="font-size:0.85rem;margin-top:4px;color:#475569;">Send a travel request or click an example prompt to generate a plan.</div>'
+            '</div>'
+        )
     total = len(plan.steps)
     completed = sum(1 for s in plan.steps if s.status == "completed")
     percent = round(completed / total * 100) if total else 100
@@ -182,52 +182,49 @@ def render_plan_view(plan) -> str:
         elif s.status == "failed" and s.error:
             detail_preview = f'<div class="step-detail step-error">Error: {s.error}</div>'
 
-        step_items.append(f"""
-<div class="step-item step-item-{s.status}">
-  <div class="step-left">
-    <div class="step-badge step-badge-{s.status}">
-      <span class="step-icon">{icon}</span>
-    </div>
-    <div class="step-text-container">
-      <div class="step-title-text">{s.title}</div>
-      {detail_preview}
-    </div>
-  </div>
-  <div class="step-right">
-    <span class="status-pill {css_class}">{s.status}</span>
-  </div>
-</div>
-""")
+        step_items.append(
+            f'<div class="step-item step-item-{s.status}">'
+            f'<div class="step-left">'
+            f'<div class="step-badge step-badge-{s.status}"><span class="step-icon">{icon}</span></div>'
+            f'<div class="step-text-container">'
+            f'<div class="step-title-text">{s.title}</div>'
+            f'{detail_preview}'
+            f'</div>'
+            f'</div>'
+            f'<div class="step-right">'
+            f'<span class="status-pill {css_class}">{s.status}</span>'
+            f'</div>'
+            f'</div>'
+        )
 
     steps_html = "".join(step_items)
-    return f"""
-<div class="panel-card plan-panel-card">
-  <div class="panel-header">
-    <div class="panel-title">📋 Planning Progress: <span style="color:#4f46e5;font-weight:700;">{completed}/{total} ({percent}%)</span></div>
-    <span class="status-pill {'status-completed' if percent == 100 else 'status-running' if percent > 0 else 'status-pending'}">
-      {'completed' if percent == 100 else 'in progress' if percent > 0 else 'pending'}
-    </span>
-  </div>
-  <div class="plan-progress-bar-track">
-    <div class="plan-progress-bar-fill" style="width:{percent}%;"></div>
-  </div>
-  <div class="step-list">
-    {steps_html}
-  </div>
-</div>
-"""
+    status_label = 'completed' if percent == 100 else ('in progress' if percent > 0 else 'pending')
+    status_badge_class = 'status-completed' if percent == 100 else ('status-running' if percent > 0 else 'status-pending')
+
+    return (
+        f'<div class="panel-card plan-panel-card">'
+        f'<div class="panel-header">'
+        f'<div class="panel-title">📋 Planning Progress: <span style="color:#4f46e5;font-weight:700;">{completed}/{total} ({percent}%)</span></div>'
+        f'<span class="status-pill {status_badge_class}">{status_label}</span>'
+        f'</div>'
+        f'<div class="plan-progress-bar-track">'
+        f'<div class="plan-progress-bar-fill" style="width:{percent}%;"></div>'
+        f'</div>'
+        f'<div class="step-list">{steps_html}</div>'
+        f'</div>'
+    )
 
 
 def render_tools_view(logs: list) -> str:
     """Format tool activity logs with parameters, results, and expandable details."""
     if not logs:
-        return """
-<div class="panel-card" style="text-align:center;padding:24px 16px;">
-  <div style="font-size:1.8rem;margin-bottom:8px;">🛠️</div>
-  <div style="font-weight:700;color:#0f172a;font-size:1rem;">No Tool Activity Yet</div>
-  <div style="font-size:0.85rem;margin-top:4px;color:#475569;">Tool executions (flights, hotels, attractions, restaurants, weather) will appear here.</div>
-</div>
-"""
+        return (
+            '<div class="panel-card" style="text-align:center;padding:24px 16px;">'
+            '<div style="font-size:1.8rem;margin-bottom:8px;">🛠️</div>'
+            '<div style="font-weight:700;color:#0f172a;font-size:1rem;">No Tool Activity Yet</div>'
+            '<div style="font-size:0.85rem;margin-top:4px;color:#475569;">Tool executions (flights, hotels, attractions, restaurants, weather) will appear here.</div>'
+            '</div>'
+        )
     tool_icons = {
         "search_flights": "✈️",
         "search_hotels": "🏨",
@@ -277,38 +274,33 @@ def render_tools_view(logs: list) -> str:
 
         raw_json = json.dumps(log, ensure_ascii=False, indent=2)
 
-        cards.append(f"""
-<div class="tool-card">
-  <div class="tool-header">
-    <div class="tool-name">
-      <span style="font-size:1.1rem;">{icon}</span>
-      <code>{name}</code>
-    </div>
-    <span class="status-pill {status_class}">{status}</span>
-  </div>
-  <div class="tool-body">
-    <div style="margin-bottom:6px;"><b style="color:#0f172a;">Input Arguments:</b> <span style="color:#334155;">{args_formatted}</span></div>
-    {f'<div style="margin-bottom:6px;"><b style="color:#0f172a;">Result:</b> <span style="color:#334155;">{result_summary}</span></div>' if result_summary else ''}
-    <details style="margin-top:8px;font-size:0.8rem;cursor:pointer;">
-      <summary style="font-weight:600;color:#334155;">Inspect Tool Payload (JSON)</summary>
-      <pre style="background:#0f172a;color:#f8fafc;padding:8px;border-radius:6px;margin-top:4px;overflow-x:auto;font-family:monospace;border:1px solid #334155;"><code>{raw_json}</code></pre>
-    </details>
-  </div>
-</div>
-""")
+        cards.append(
+            f'<div class="tool-card">'
+            f'<div class="tool-header">'
+            f'<div class="tool-name"><span style="font-size:1.1rem;">{icon}</span> <code>{name}</code></div>'
+            f'<span class="status-pill {status_class}">{status}</span>'
+            f'</div>'
+            f'<div class="tool-body">'
+            f'<div style="margin-bottom:6px;"><b style="color:#0f172a;">Input Arguments:</b> <span style="color:#334155;">{args_formatted}</span></div>'
+            f'{"<div style=\"margin-bottom:6px;\"><b style=\"color:#0f172a;\">Result:</b> <span style=\"color:#334155;\">" + result_summary + "</span></div>" if result_summary else ""}'
+            f'<details style="margin-top:8px;font-size:0.8rem;cursor:pointer;">'
+            f'<summary style="font-weight:600;color:#334155;">Inspect Tool Payload (JSON)</summary>'
+            f'<pre style="background:#0f172a;color:#f8fafc;padding:8px;border-radius:6px;margin-top:4px;overflow-x:auto;font-family:monospace;border:1px solid #334155;"><code>{raw_json}</code></pre>'
+            f'</details>'
+            f'</div>'
+            f'</div>'
+        )
 
     cards_html = "".join(cards)
-    return f"""
-<div class="panel-card">
-  <div class="panel-header">
-    <div class="panel-title">🛠️ Tool Activity Log: <span style="color:#4f46e5;font-weight:700;">{len(logs)} Executed</span></div>
-    <span class="status-pill status-completed">Mock Data</span>
-  </div>
-  <div class="tool-list">
-    {cards_html}
-  </div>
-</div>
-"""
+    return (
+        f'<div class="panel-card">'
+        f'<div class="panel-header">'
+        f'<div class="panel-title">🛠️ Tool Activity Log: <span style="color:#4f46e5;font-weight:700;">{len(logs)} Executed</span></div>'
+        f'<span class="status-pill status-completed">Mock Data</span>'
+        f'</div>'
+        f'<div class="tool-list">{cards_html}</div>'
+        f'</div>'
+    )
 
 
 def new_thread(user):
@@ -355,7 +347,13 @@ def respond(user, thread, message, history):
     except Exception as e:
         err_msg = clean_chat_response(f"⚠️ Agent error: {e}")
         cleaned_history.append({"role": "assistant", "content": err_msg})
-        yield cleaned_history, f"⚠️ Request failed: {e}", render_tools_view([]), render_memory_view(u)
+        err_plan = (
+            f'<div class="panel-card plan-panel-card" style="border-left: 4px solid #ef4444;padding:18px;">'
+            f'<div style="font-weight:700;color:#ef4444;margin-bottom:4px;">⚠️ Request failed</div>'
+            f'<div style="font-size:0.85rem;color:#334155;">{e}</div>'
+            f'</div>'
+        )
+        yield cleaned_history, err_plan, render_tools_view([]), render_memory_view(u)
 
 
 EXAMPLE_PROMPTS = [
@@ -545,6 +543,16 @@ body, html {
 /* ==========================================================================
    Planning Progress Panel & Vertical Stacked Timeline
    ========================================================================== */
+.gradio-container .gradio-html,
+.gradio-container .html-container,
+.gradio-container [data-testid="html"],
+.gradio-container div:has(> .plan-panel-card) {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  overflow-x: hidden !important;
+}
+
 .plan-panel-card {
   width: 100% !important;
   max-width: 100% !important;
@@ -596,7 +604,7 @@ body, html {
   margin-bottom: 0 !important;
   transition: all 0.2s ease !important;
   min-width: 0 !important;
-  flex: none !important;
+  flex: 0 0 auto !important;
 }
 
 /* Step status border accents */
@@ -1175,12 +1183,12 @@ with gr.Blocks(title="MemoryLab | AI Travel Planning Companion") as demo:
         # Right Column: Planning Workflow, User Memory, and Tool Activity (scale 5)
         with gr.Column(scale=5):
             # Planning Progress Panel
-            plan_display = gr.Markdown(value=render_plan_view(None))
+            plan_display = gr.HTML(value=render_plan_view(None))
 
             # User Memory & Tool Activity Tabs
             with gr.Tabs():
                 with gr.Tab("🧠 User Memory"):
-                    memory_display = gr.Markdown(value=render_memory_view("demo-user"))
+                    memory_display = gr.HTML(value=render_memory_view("demo-user"))
                     with gr.Row():
                         refresh_mem = gr.Button("🔄 Refresh Saved Memory", size="sm")
 
@@ -1193,7 +1201,7 @@ with gr.Blocks(title="MemoryLab | AI Travel Planning Companion") as demo:
                         clear_status = gr.Markdown()
 
                 with gr.Tab("🛠️ Tool Activity"):
-                    tools_display = gr.Markdown(value=render_tools_view([]))
+                    tools_display = gr.HTML(value=render_tools_view([]))
 
     # Event handlers
     send.click(

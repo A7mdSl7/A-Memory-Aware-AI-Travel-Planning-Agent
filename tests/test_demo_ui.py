@@ -138,3 +138,22 @@ def test_render_plan_view_vertical_layout_all_six_steps():
     # Verify status pills and badges are present for each step
     assert "status-pill status-pending" in html
     assert "step-badge-pending" in html
+
+
+def test_plan_view_and_panels_are_pure_html_without_tag_mismatch():
+    import gradio as gr
+    import app.ui as ui
+
+    # Verify display components are gr.HTML to prevent CommonMark / markdown-it breaking HTML cards
+    assert isinstance(ui.plan_display, gr.HTML)
+    assert isinstance(ui.memory_display, gr.HTML)
+    assert isinstance(ui.tools_display, gr.HTML)
+
+    plan = create_plan("Plan a weekend itinerary in Florence")
+    html = ui.render_plan_view(plan)
+
+    # Div tags are strictly balanced
+    assert html.count("<div") == html.count("</div")
+
+    # No unescaped or stray closing tags converted to pre/code
+    assert "<pre><code>" not in html
