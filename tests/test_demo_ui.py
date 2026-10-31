@@ -3,6 +3,7 @@ import sys
 from app.config import Settings
 from app.memory_store import MemoryStore
 from app.agent import TravelAgent
+from app.planner import create_plan
 
 
 def test_demo_ui_initialization_and_metadata(monkeypatch, tmp_path):
@@ -80,3 +81,60 @@ def test_clear_user_data_requires_confirmation(tmp_path):
     assert "cleared" in msg.lower()
     assert chk is False
     assert store.get_preferences(user_id).likes_museums is None  # Data deleted
+
+
+def test_clean_chat_response_removes_stray_html_and_preserves_markdown():
+    from app.ui import clean_chat_response
+
+    # Stray div / closing div tags are removed
+    dirty_text = "**DEMO MODE**\n\n### Weekend in Florence\n- Saturday: Museum\n</div>"
+    cleaned = clean_chat_response(dirty_text)
+    assert "</div>" not in cleaned
+    assert "<div>" not in cleaned
+    assert "### Weekend in Florence" in cleaned
+    assert "- Saturday: Museum" in cleaned
+
+    # Internal HTML fragments are sanitized
+    html_fragment = "<div class='test'><span>Inner</span></div><p>Paragraph</p>"
+    cleaned_frag = clean_chat_response(html_fragment)
+    assert "<div" not in cleaned_frag
+    assert "</div" not in cleaned_frag
+    assert "InnerParagraph" in cleaned_frag
+
+    # Legitimate fenced code blocks with HTML are preserved
+    code_text = "Here is an example:\n```html\n<div class=\"example\">Content</div>\n```"
+    cleaned_code = clean_chat_response(code_text)
+    assert '<div class="example">Content</div>' in cleaned_code
+
+    # Inline code is preserved
+    inline_code = "Use `search_hotels` or `<div>test</div>` in your query."
+    cleaned_inline = clean_chat_response(inline_code)
+    assert "`search_hotels`" in cleaned_inline
+    assert "`<div>test</div>`" in cleaned_inline
+
+
+def test_render_plan_view_vertical_layout_all_six_steps():
+    from app.ui import render_plan_view
+
+    # Standard itinerary request generates all 6 standard planning steps
+    plan = create_plan("Plan a weekend itinerary in Florence")
+    assert len(plan.steps) == 6
+
+    html = render_plan_view(plan)
+
+    # Contains panel card with vertical step list and progress bar
+    assert "plan-panel-card" in html
+    assert "step-list" in html
+    assert "plan-progress-bar-track" in html
+
+    # Exactly 6 step items present
+    assert html.count('class="step-item ') == 6
+
+    # Verify each of the 6 steps is displayed with title and status badge
+    for step in plan.steps:
+        assert step.title in html
+        assert f"step-item-{step.status}" in html
+
+    # Verify status pills and badges are present for each step
+    assert "status-pill status-pending" in html
+    assert "step-badge-pending" in html

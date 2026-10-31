@@ -1,6 +1,7 @@
 import json
 import uuid
 import inspect
+import re
 import gradio as gr
 from .config import get_settings
 from .memory_store import MemoryStore
@@ -29,6 +30,36 @@ def memories(user: str) -> str:
     if not user.strip():
         return "{}"
     return json.dumps(store.get_preferences(user.strip()).model_dump(), ensure_ascii=False, indent=2)
+
+
+def clean_chat_response(text: str) -> str:
+    """Sanitize assistant response to remove stray HTML tags (e.g. <div>, </div>) while preserving markdown formatting and code."""
+    if not isinstance(text, str):
+        return text
+
+    # Protect fenced code blocks (```...```) so intentional code snippets are preserved
+    tokens = re.split(r'(```[\s\S]*?```)', text)
+    cleaned_tokens = []
+    for i, token in enumerate(tokens):
+        if i % 2 == 0:
+            # Outside fenced code blocks, protect inline code (`...`)
+            inline_tokens = re.split(r'(`[^`]+`)', token)
+            for j, subtoken in enumerate(inline_tokens):
+                if j % 2 == 0:
+                    # Strip any raw HTML tags (such as <div>, </div>, <span>, </span>, etc.)
+                    subtoken = re.sub(
+                        r'</?(?:div|span|p|b|i|strong|em|pre|code|table|tr|td|th|ul|li|ol|h[1-6]|script|style|iframe|button|label|input|form|a)\b[^>]*>',
+                        '',
+                        subtoken,
+                        flags=re.IGNORECASE,
+                    )
+                    # Strip any leftover stray HTML tag fragments like </?> or <...>
+                    subtoken = re.sub(r'</?[a-zA-Z]+(?:\s+[^>]*)?/?>', '', subtoken)
+                inline_tokens[j] = subtoken
+            token = "".join(inline_tokens)
+        cleaned_tokens.append(token)
+
+    return "".join(cleaned_tokens).strip()
 
 
 def render_memory_view(user: str) -> str:
@@ -116,11 +147,11 @@ def render_memory_view(user: str) -> str:
 
 
 def render_plan_view(plan) -> str:
-    """Format travel planning workflow with progress percentage and status icons."""
+    """Format travel planning workflow as a clean vertical timeline with progress and status indicators."""
     if not plan or not plan.steps:
         return """
-<div class="panel-card" style="text-align:center;padding:24px 16px;">
-  <div style="font-size:1.8rem;margin-bottom:8px;">📋</div>
+<div class="panel-card plan-panel-card" style="text-align:center;padding:28px 16px;">
+  <div style="font-size:2rem;margin-bottom:8px;">📋</div>
   <div style="font-weight:700;color:#0f172a;font-size:1rem;">No Request Planned Yet</div>
   <div style="font-size:0.85rem;margin-top:4px;color:#475569;">Send a travel request or click an example prompt to generate a plan.</div>
 </div>
@@ -145,36 +176,40 @@ def render_plan_view(plan) -> str:
                 res_obj = json.loads(s.result)
                 if isinstance(res_obj, dict) and "options" in res_obj:
                     count = len(res_obj["options"])
-                    detail_preview = f'<div style="font-size:0.75rem;color:#475569;margin-top:2px;">Found {count} option(s)</div>'
+                    detail_preview = f'<div class="step-detail">Found {count} option(s)</div>'
             except Exception:
                 pass
         elif s.status == "failed" and s.error:
-            detail_preview = f'<div style="font-size:0.75rem;color:#dc2626;margin-top:2px;font-weight:600;">Error: {s.error}</div>'
+            detail_preview = f'<div class="step-detail step-error">Error: {s.error}</div>'
 
         step_items.append(f"""
-<div class="step-item">
-  <div class="step-info">
-    <span style="font-size:1rem;font-weight:700;color:#0f172a;">{icon}</span>
-    <div>
-      <div style="color:#0f172a;font-weight:600;">{s.title}</div>
+<div class="step-item step-item-{s.status}">
+  <div class="step-left">
+    <div class="step-badge step-badge-{s.status}">
+      <span class="step-icon">{icon}</span>
+    </div>
+    <div class="step-text-container">
+      <div class="step-title-text">{s.title}</div>
       {detail_preview}
     </div>
   </div>
-  <span class="status-pill {css_class}">{s.status}</span>
+  <div class="step-right">
+    <span class="status-pill {css_class}">{s.status}</span>
+  </div>
 </div>
 """)
 
     steps_html = "".join(step_items)
     return f"""
-<div class="panel-card">
+<div class="panel-card plan-panel-card">
   <div class="panel-header">
     <div class="panel-title">📋 Planning Progress: <span style="color:#4f46e5;font-weight:700;">{completed}/{total} ({percent}%)</span></div>
     <span class="status-pill {'status-completed' if percent == 100 else 'status-running' if percent > 0 else 'status-pending'}">
       {'completed' if percent == 100 else 'in progress' if percent > 0 else 'pending'}
     </span>
   </div>
-  <div style="background:#e2e8f0;height:7px;border-radius:9999px;overflow:hidden;margin-bottom:12px;">
-    <div style="background:#4f46e5;height:100%;width:{percent}%;transition:width 0.3s ease;"></div>
+  <div class="plan-progress-bar-track">
+    <div class="plan-progress-bar-fill" style="width:{percent}%;"></div>
   </div>
   <div class="step-list">
     {steps_html}
@@ -299,17 +334,28 @@ def respond(user, thread, message, history):
         yield history, render_plan_view(None), render_tools_view([]), render_memory_view(u)
         return
 
-    history = (history or []) + [{"role": "user", "content": message}]
+    # Sanitize existing history items so accidental HTML does not persist
+    cleaned_history = []
+    for m in (history or []):
+        if isinstance(m, dict) and "content" in m:
+            content = clean_chat_response(m["content"]) if m.get("role") == "assistant" else m["content"]
+            cleaned_history.append({**m, "content": content})
+        else:
+            cleaned_history.append(m)
+
+    cleaned_history.append({"role": "user", "content": message})
     initial = create_plan(message)
-    yield list(history), render_plan_view(initial), render_tools_view([]), render_memory_view(u)
+    yield list(cleaned_history), render_plan_view(initial), render_tools_view([]), render_memory_view(u)
 
     try:
         out = agent.respond(u, thread, message)
-        history.append({"role": "assistant", "content": out["answer"]})
-        yield history, render_plan_view(out["plan"]), render_tools_view(out["tool_logs"]), render_memory_view(u)
+        answer = clean_chat_response(out["answer"])
+        cleaned_history.append({"role": "assistant", "content": answer})
+        yield cleaned_history, render_plan_view(out["plan"]), render_tools_view(out["tool_logs"]), render_memory_view(u)
     except Exception as e:
-        history.append({"role": "assistant", "content": f"⚠️ Agent error: {e}"})
-        yield history, f"⚠️ Request failed: {e}", render_tools_view([]), render_memory_view(u)
+        err_msg = clean_chat_response(f"⚠️ Agent error: {e}")
+        cleaned_history.append({"role": "assistant", "content": err_msg})
+        yield cleaned_history, f"⚠️ Request failed: {e}", render_tools_view([]), render_memory_view(u)
 
 
 EXAMPLE_PROMPTS = [
@@ -463,6 +509,8 @@ body, html {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
   margin-bottom: 14px;
   color: var(--card-text) !important;
+  overflow-x: hidden !important;
+  box-sizing: border-box !important;
 }
 
 /* Ensure no text inside panel-card inherits dark-mode white text */
@@ -492,6 +540,199 @@ body, html {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+/* ==========================================================================
+   Planning Progress Panel & Vertical Stacked Timeline
+   ========================================================================== */
+.plan-panel-card {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  overflow-x: hidden !important;
+}
+
+.plan-progress-bar-track {
+  background: #e2e8f0 !important;
+  height: 8px !important;
+  border-radius: 9999px !important;
+  overflow: hidden !important;
+  margin-bottom: 14px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.plan-progress-bar-fill {
+  background: var(--primary) !important;
+  height: 100% !important;
+  transition: width 0.3s ease !important;
+  border-radius: 9999px !important;
+}
+
+/* Vertical Stacked Step List */
+.step-list {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  overflow-x: hidden !important;
+}
+
+/* Individual Vertical Step Card */
+.step-item {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  padding: 12px 16px !important;
+  border-radius: 10px !important;
+  background: var(--card-bg-subtle) !important;
+  border: 1px solid var(--card-border) !important;
+  margin-bottom: 0 !important;
+  transition: all 0.2s ease !important;
+  min-width: 0 !important;
+  flex: none !important;
+}
+
+/* Step status border accents */
+.step-item-completed {
+  border-left: 4px solid #10b981 !important;
+  background: #fbfdfc !important;
+}
+.step-item-running {
+  border-left: 4px solid #3b82f6 !important;
+  background: #eff6ff !important;
+}
+.step-item-failed {
+  border-left: 4px solid #ef4444 !important;
+  background: #fef2f2 !important;
+}
+.step-item-pending {
+  border-left: 4px solid #cbd5e1 !important;
+}
+
+/* Left portion containing badge icon and text */
+.step-left,
+.step-info {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 12px !important;
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+}
+
+/* Badge icon representing step status */
+.step-badge {
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  min-height: 28px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 0.9rem !important;
+  font-weight: 700 !important;
+  flex-shrink: 0 !important;
+}
+
+.step-badge-pending {
+  background: #f1f5f9 !important;
+  color: #64748b !important;
+  border: 1px solid #cbd5e1 !important;
+}
+.step-badge-running {
+  background: #dbeafe !important;
+  color: #1e40af !important;
+  border: 1px solid #93c5fd !important;
+}
+.step-badge-completed {
+  background: var(--success-bg) !important;
+  color: var(--success-text) !important;
+  border: 1px solid var(--success-border) !important;
+}
+.step-badge-failed {
+  background: var(--danger-bg) !important;
+  color: var(--danger-text) !important;
+  border: 1px solid var(--danger-border) !important;
+}
+
+/* Step text container */
+.step-text-container {
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+}
+
+/* Step title displayed horizontally without character-by-character wrap */
+.step-title-text {
+  font-size: 0.92rem !important;
+  font-weight: 600 !important;
+  color: #0f172a !important;
+  white-space: normal !important;
+  word-break: normal !important;
+  overflow-wrap: break-word !important;
+  line-height: 1.35 !important;
+}
+
+/* Details beneath title */
+.step-detail {
+  font-size: 0.78rem !important;
+  color: #475569 !important;
+  margin-top: 3px !important;
+  line-height: 1.3 !important;
+}
+
+.step-detail.step-error {
+  color: #dc2626 !important;
+  font-weight: 600 !important;
+}
+
+/* Right portion containing status pill */
+.step-right {
+  flex-shrink: 0 !important;
+  margin-left: 12px !important;
+}
+
+/* Status Pills */
+.status-pill {
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+}
+
+.status-pending {
+  background: #f1f5f9 !important;
+  color: #334155 !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+.status-running {
+  background: #dbeafe !important;
+  color: #1e40af !important;
+  border: 1px solid #93c5fd !important;
+}
+
+.status-completed {
+  background: var(--success-bg) !important;
+  color: var(--success-text) !important;
+  border: 1px solid var(--success-border) !important;
+}
+
+.status-failed {
+  background: var(--danger-bg) !important;
+  color: var(--danger-text) !important;
+  border: 1px solid var(--danger-border) !important;
 }
 
 /* ==========================================================================
@@ -530,63 +771,6 @@ body, html {
   font-weight: 600;
   margin-right: 4px;
   margin-bottom: 4px;
-}
-
-/* ==========================================================================
-   Workflow Step Items
-   ========================================================================== */
-.step-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 14px;
-  border-radius: 8px;
-  background: var(--card-bg-subtle) !important;
-  border: 1px solid var(--card-border) !important;
-  margin-bottom: 8px;
-}
-
-.step-info {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 0.88rem;
-  font-weight: 600;
-  color: var(--card-text) !important;
-}
-
-/* Status Pills */
-.status-pill {
-  font-size: 0.74rem;
-  font-weight: 700;
-  padding: 3px 10px;
-  border-radius: 9999px;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-.status-pending {
-  background: #f1f5f9 !important;
-  color: #334155 !important;
-  border: 1px solid #cbd5e1 !important;
-}
-
-.status-running {
-  background: #dbeafe !important;
-  color: #1e40af !important;
-  border: 1px solid #93c5fd !important;
-}
-
-.status-completed {
-  background: var(--success-bg) !important;
-  color: var(--success-text) !important;
-  border: 1px solid var(--success-border) !important;
-}
-
-.status-failed {
-  background: var(--danger-bg) !important;
-  color: var(--danger-text) !important;
-  border: 1px solid var(--danger-border) !important;
 }
 
 /* ==========================================================================
@@ -898,6 +1082,15 @@ body, html {
   }
   .gradio-container {
     padding: 8px !important;
+  }
+  .step-item {
+    padding: 10px 12px !important;
+  }
+  .step-left {
+    gap: 8px !important;
+  }
+  .step-title-text {
+    font-size: 0.85rem !important;
   }
 }
 """
